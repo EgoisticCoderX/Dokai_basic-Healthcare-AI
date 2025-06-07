@@ -1,0 +1,5 @@
+groq
+dotenv
+httpx
+requests
+beautifulsoup4

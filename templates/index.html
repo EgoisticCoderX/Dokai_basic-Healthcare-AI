@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="Dokai.ico" type="image/x-icon">
+    <title>Dokai AI Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+</head>
+<body>
+
+
+    <div class="container">
+        <div class="header">
+            <h1>Dokai AI Assistant</h1>
+            <p>Powered by Groq's llama-3.3-70b-versatile model</p>
+        </div>
+        
+        <div class="chat-container" id="chat-container">
+            <div class="message ai-message">
+                Hello! I'm Dokai, your AI health assistant powered by Groq's llama-3.3-70b-versatile. How can I help you today?
+            </div>
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Describe your health conditions: " autocomplete="off">
+            <button id="voice-input-button" title="Voice Input"><span class="material-symbols-outlined">mic</span></button>
+            <button id="voice-output-button" title="Voice Output"><span class="material-symbols-outlined">volume_up</span></button>
+            <div class="theme-switch-wrapper">
+                <span>Light Mode</span>
+                <label class="theme-switch" for="toggle-dark-mode">
+                    <input type="checkbox" id="toggle-dark-mode">
+                    <div class="slider round"></div>
+                </label>
+                <span>Dark Mode</span>
+            </div>
+            <div class="web-search-switch-wrapper">
+                <span>Web Search Off</span>
+                <label class="web-search-switch" for="toggle-web-search">
+                    <input type="checkbox" id="toggle-web-search">
+                    <div class="web-search-slider round"></div>
+                </label>
+                <span>Web Search On</span>
+            </div>
+            <button id="send-button"><span class="material-symbols-outlined">send</span></button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const typingIndicator = document.getElementById('typing-indicator');
+
+            function addMessage(content, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(isUser ? 'user-message' : 'ai-message');
+                messageDiv.textContent = content;
+                
+                // Insert before typing indicator
+                chatContainer.insertBefore(messageDiv, typingIndicator);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function showTypingIndicator() {
+                typingIndicator.style.display = 'block';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function hideTypingIndicator() {
+                typingIndicator.style.display = 'none';
+            }
+
+            async function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                // Add user message to chat
+                addMessage(message, true);
+                userInput.value = '';
+
+                // Show typing indicator
+                showTypingIndicator();
+
+                try {
+                    // Send message to backend
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message })
+                    });
+
+                    const data = await response.json();
+                    
+                    // Hide typing indicator and add AI response
+                    hideTypingIndicator();
+                    addMessage(data.response);
+                } catch (error) {
+                    console.error('Error:', error);
+                    hideTypingIndicator();
+                    addMessage('Sorry, there was an error processing your request.');
+                }
+            }
+
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+    </script>
+</body>
+</html>
